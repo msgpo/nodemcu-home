@@ -1,4 +1,5 @@
 -- Reads the gyro state of an MPU6050 to determine if the washer/dryer is going.
+-- Most of the code comes from: https://www.electronicwings.com/nodemcu/mpu6050-interfacing-with-nodemcu
 
 dofile("mqtt.lua")
 dofile("led.lua")

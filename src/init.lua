@@ -1,7 +1,22 @@
+-- Shared initialization for all NodeMCU chips.
+-- Does the following:
+-- 1. Reads WiFi SSID/Password from secrets.lua
+-- 2. Connects to WiFi and waits 3 seconds
+-- 3. (Optionally) Downloads application.lua code from CODE_HOST (defined in secrets.lua)
+-- 4. Runs application.lua
+-- 5. (Optionally) Restarts every hour
+
+AUTO_RESTART = true
+
+-------------------------------------------------------------------------------
+
 -- Expecting in secrets.lua:
 -- SSID = "xxxxxxxxxx"
 -- PASSWORD = "xxxxxxxxxx"
 -- CODE_HOST = "xxxxxxxx.xxx"
+
+-- Disable code download
+CODE_HOST = nil
 
 dofile("secrets.lua")
 
@@ -13,7 +28,9 @@ function reset()
   node.restart()
 end
 
-tmr.create():alarm(1000*60*60, tmr.ALARM_SINGLE, reset)
+if AUTO_RESTART then
+  tmr.create():alarm(1000*60*60, tmr.ALARM_SINGLE, reset)
+end
 
 -------------------------------------------------------------------------------
 
@@ -104,21 +121,23 @@ end
 -- Downloads an application.lua file for this chip from:
 -- http://CODE_HOST/nodemcu/<chipid>/application.lua
 function startup()
-  download_file(
-    CODE_HOST,
-    "/nodemcu/" .. tostring(node.chipid()) .. "/application.lua",
-    "application.tmp",
-    function()
-      if file.exists("application.tmp") then
-        -- Move temporary file
-        file.remove("application.lua")
-        file.rename("application.tmp", "application.lua")
-        print("Running application.lua")
-        dofile("application.lua")
-      else
-        print("application.lua missing")
-      end
-  end)
+  if CODE_HOST then
+    download_file(
+      CODE_HOST,
+      "/nodemcu/" .. tostring(node.chipid()) .. "/application.lua",
+      "application.tmp",
+      function()
+        if file.exists("application.tmp") then
+          -- Move temporary file
+          file.remove("application.lua")
+          file.rename("application.tmp", "application.lua")
+          print("Running application.lua")
+          dofile("application.lua")
+        else
+          print("application.lua missing")
+        end
+    end)
+  end
 end
 
 -------------------------------------------------------------------------------
